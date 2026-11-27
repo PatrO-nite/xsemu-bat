@@ -34,10 +34,18 @@ open at the end; from a console it returns the exit code.
 
 ## What it needs
 
-Windows 10/11 x64 with a D3D12 GPU supporting Shader Model 6.6 and mesh shaders. git, the Rust MSVC
-toolchain, the VS C++ build tools, CMake and Python are installed with winget when you say yes; Qt
-6.8 for MSVC 2022 is installed with aqtinstall into `%LOCALAPPDATA%\Qt` (about 1.1 GB). DXC from the
-Windows SDK is reported but not installed: without it, set `XCL_SHADER_BACKEND=dxil`.
+- Windows 10/11, x64.
+- A D3D12 GPU with Shader Model 6.6 and mesh shaders.
+- git — the fetch falls back to a source archive without it.
+- The Rust MSVC toolchain.
+- The Visual Studio C++ build tools.
+- CMake.
+- Python — only to download Qt.
+- Qt 6.8 for MSVC 2022 — about 1.1 GB, into `%LOCALAPPDATA%\Qt`.
+- DXC 1.8+ from the Windows SDK — not installed for you; without it, set `XCL_SHADER_BACKEND=dxil`.
+
+Everything except Windows, the GPU and DXC is installed for you when you say yes: git, Rust, the C++
+build tools, CMake and Python through winget, Qt through aqtinstall.
 
 `XSEMU_INSTALL=no` declines every offer, `XSEMU_INSTALL=yes` accepts them all.
 
