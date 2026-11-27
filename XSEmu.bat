@@ -346,7 +346,8 @@ rem unfindable; it is only fatal to shader work, not to starting XSEmu.
 if exist "%SRC%\target\release\dxcompiler.dll" exit /b 0
 if exist "%SRC%\dxcompiler.dll" exit /b 0
 if defined XCL_DXC_DIR exit /b 0
-if exist "%ProgramFiles(x86)%\Windows Kits\10\bin\*\x64\dxcompiler.dll" exit /b 0
+rem if exist stops at the first wildcard, so walk the SDK folders one by one.
+for /d %%K in ("%ProgramFiles(x86)%\Windows Kits\10\bin\*") do if exist "%%K\x64\dxcompiler.dll" exit /b 0
 echo [XSEmu] Note: no dxcompiler.dll found next to XSEmu.exe, in XCL_DXC_DIR
 echo          or in the Windows SDK. Shader translation needs DXC 1.8 or newer:
 echo          install "Windows SDK for Desktop C++ x64 Apps", or set XCL_DXC_DIR
