@@ -84,7 +84,9 @@ goto done
 :pass_through
 call :ensure_exe
 if errorlevel 1 goto failed
-call :check_dxc
+if /i "%FIRST%"=="shaders" call :check_dxc
+if /i "%FIRST%"=="warm-up" call :check_dxc
+if /i "%FIRST%"=="run" call :check_dxc
 "%EXE%" %*
 set "RC=%ERRORLEVEL%"
 goto done
