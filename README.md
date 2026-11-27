@@ -1,21 +1,24 @@
 # XSEmu.bat
 
-A self-contained Windows batch launcher for [XSEmu](https://github.com/zortos293/XSEmu), the
-experimental Xbox Series X|S (GDK) title runner. Drop the script in any folder, run it, and it
-fetches XSEmu, builds it, and starts it. Later runs reuse the checkout and go straight to the game.
+A self-contained Windows batch launcher for [zortos293/XSEmu](https://github.com/zortos293/XSEmu),
+the experimental Xbox Series X|S (GDK) title runner. Drop the script in an empty folder, run it, and
+the folder becomes an XSEmu checkout: sources, build and all. Later runs go straight to the game.
 
 The script only drives XSEmu's own build and `XSEmu run` command; it contains none of XSEmu's code.
 XSEmu is GPL-2.0-only and belongs to its authors.
 
 ## Install
 
-That's the whole install: put `XSEmu.bat` in a folder — an empty one is fine — and run it.
+Put `XSEmu.bat` in a folder of its own — an empty one is fine — and run it.
 
-The first run clones XSEmu into `XSEmu\` beside the script and builds
-`XSEmu\target\release\XSEmu.exe`, which takes a few minutes. Later runs reuse that checkout. If the
-script sits inside an existing XSEmu checkout (a folder with `Cargo.toml`), it uses that one and
-clones nothing. Without git on `PATH`, the first run downloads the source archive instead and
-`update` re-downloads it.
+No nested directories: the first run fetches XSEmu into that same folder, so `Cargo.toml`, `crates\`
+and `.git` land next to the script, then it builds `target\release\XSEmu.exe`. That takes a few
+minutes. Later runs reuse the checkout. Without git on `PATH`, the first run unpacks the source
+archive instead, and `update` re-downloads it.
+
+The folder has to be safe to turn into a checkout, so the script refuses to run where it would
+destroy something: a folder that already holds a different Rust project (`Cargo.toml` without
+`crates\xcl`), a folder belonging to another git repository, and a whole drive root.
 
 ## Usage
 
@@ -43,7 +46,7 @@ XSEmu.bat launcher
 ## Requirements
 
 - Windows 10 or 11, x64, with a D3D12 GPU that supports Shader Model 6.6 and mesh shaders.
-- **git** for the clone, though the script falls back to downloading a source archive.
+- **git** for the fetch, though the script falls back to downloading a source archive.
 - **Rust** MSVC toolchain (`stable-x86_64-pc-windows-msvc`) and the **Visual Studio C++ build
   tools** for the runtime.
 - **DXC** 1.8 or newer (`dxcompiler.dll`, `dxil.dll`) for shader translation. XSEmu looks in the
@@ -57,28 +60,33 @@ XSEmu.bat launcher
 ## Layout it creates
 
 ```
-<wherever the script is>\
+<the folder holding the script>\
   XSEmu.bat
-  XSEmu\                        cloned on first run
-    Cargo.toml
-    target\release\XSEmu.exe    the emulator
-    target\launcher-build\      launcher build tree
-    target\launcher-dist\bin\   XSEmuLauncher.exe, XSEmu.exe beside it
+  Cargo.toml, crates\, launcher\, tests\     fetched on the first run
+  .git\                                      the checkout, so update can pull
+  target\release\XSEmu.exe                   the emulator
+  target\launcher-build\                     launcher build tree
+  target\launcher-dist\bin\                  XSEmuLauncher.exe, XSEmu.exe beside it
 ```
 
-Everything the script generates lives under `target\`, which XSEmu's own `.gitignore` covers, so
-`git status` inside the clone stays clean. Per-title data goes wherever XSEmu puts it:
-`%LOCALAPPDATA%\XCL\<title>\` unless `XCL_DATA_ROOT` says otherwise.
+Everything the build generates lives under `target\`, which XSEmu's own `.gitignore` covers, so
+`git status` in that folder lists only `XSEmu.bat` as untracked. Per-title data goes wherever XSEmu
+puts it: `%LOCALAPPDATA%\XCL\<title>\` unless `XCL_DATA_ROOT` says otherwise.
 
 ## Behaviour details
 
 - The runtime build runs `cargo build --release --locked --workspace`, the command the upstream
   README and CI use.
+- The checkout is made with `git init`, a depth-1 fetch of `main` and a checkout into it, because
+  `git clone` refuses a folder that already holds `XSEmu.bat`. Fetching replaces the folder's own
+  `README.md` with XSEmu's, which is why these wrapper docs are published as `README-XSEmu-bat.md`
+  next to the script rather than as `README.md`.
 - The launcher is configured with the Visual Studio 17 2022 generator so it works from a plain
   `cmd` window without a Developer prompt, installed into `target\launcher-dist`, and `XSEmu.exe` is
   copied next to `XSEmuLauncher.exe` because the launcher starts it as a separate process and looks
   for it beside itself.
 - Started from Explorer or by drag-and-drop, the window stays open at the end; from an open console
   it returns XSEmu's exit code.
-- Missing git, missing `cargo`, a failed clone, a failed pull, a failed configure and missing Qt each
+- Missing git, missing `cargo`, a failed fetch, a failed pull, a failed configure and missing Qt each
   print a short message with the fix instead of shell noise.
+- A folder holding an `XSEmu\` subfolder from version 1.0.0 of this script is still used as is.

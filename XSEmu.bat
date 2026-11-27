@@ -10,11 +10,12 @@ rem   XSEmu.bat build                  build target\release\XSEmu.exe
 rem   XSEmu.bat launcher               build the Qt launcher (CMake + Qt 6) and start it
 rem   XSEmu.bat update                 pull the newest sources and rebuild
 rem
-rem Put this file in any folder and run it. The first run clones XSEmu into
-rem XSEmu\ next to this file (or downloads a source archive if git is missing);
-rem later runs reuse that checkout. A Cargo.toml beside this file or in XSEmu\
-rem is what counts as a checkout, so dropping the script into an existing clone
-rem works too. You can also drop a game folder or a title .exe onto the script.
+rem Put this file in a folder of its own and run it. The first run turns that
+rem folder into an XSEmu checkout: it fetches the sources here, so Cargo.toml and
+rem crates\ land next to this script, then it builds. Without git it unpacks a
+rem source archive instead. A folder that already has Cargo.toml is used as is,
+rem and an XSEmu\ subfolder from version 1.0.0 of this script is still honoured.
+rem You can also drop a game folder or a title .exe onto the script.
 rem ---------------------------------------------------------------------------
 setlocal EnableExtensions
 title XSEmu
@@ -25,6 +26,7 @@ set "SELF=%~nx0"
 set "REPO_URL=https://github.com/zortos293/XSEmu"
 set "ARCHIVE=%REPO_URL%/archive/refs/heads/main.zip"
 set "SRC="
+set "TARGET="
 set "EXE="
 set "RC=0"
 
@@ -33,6 +35,12 @@ rem window afterwards; keep it open then, but not when run from an open console.
 set "CMDLINE=%cmdcmdline:"=%"
 set "PAUSE_AT_END="
 if not "%CMDLINE:/c=%"=="%CMDLINE%" set "PAUSE_AT_END=1"
+
+if "%HERE:~1%"==":" (
+  echo [XSEmu] ERROR: "%HERE%" is a whole drive. Give this script a folder of its
+  echo          own; the first run turns that folder into an XSEmu checkout.
+  goto failed
+)
 
 set "FIRST=%~1"
 if /i "%FIRST%"=="update" goto update_target
@@ -84,9 +92,9 @@ goto done
 :pass_through
 call :ensure_exe
 if errorlevel 1 goto failed
+if /i "%FIRST%"=="run" call :check_dxc
 if /i "%FIRST%"=="shaders" call :check_dxc
 if /i "%FIRST%"=="warm-up" call :check_dxc
-if /i "%FIRST%"=="run" call :check_dxc
 "%EXE%" %*
 set "RC=%ERRORLEVEL%"
 goto done
@@ -119,16 +127,11 @@ goto done
 :update_target
 call :find_source
 if not defined SRC (
-  call :fetch_source
+  call :ensure_source
   if errorlevel 1 goto failed
-  set "SRC=%HERE%\XSEmu"
 ) else (
   call :update_source
   if errorlevel 1 goto failed
-)
-if not exist "%SRC%\Cargo.toml" (
-  echo [XSEmu] ERROR: "%SRC%" has no Cargo.toml after the update.
-  goto failed
 )
 set "EXE=%SRC%\target\release\XSEmu.exe"
 call :build
@@ -139,34 +142,56 @@ rem ---------------------------------------------------------------- helpers ---
 
 :find_source
 set "SRC="
-if exist "%HERE%\Cargo.toml" set "SRC=%HERE%"
-if not defined SRC if exist "%HERE%\XSEmu\Cargo.toml" set "SRC=%HERE%\XSEmu"
+if exist "%HERE%\Cargo.toml" if exist "%HERE%\crates\xcl\Cargo.toml" set "SRC=%HERE%"
+if not defined SRC if exist "%HERE%\XSEmu\Cargo.toml" if exist "%HERE%\XSEmu\crates\xcl\Cargo.toml" set "SRC=%HERE%\XSEmu"
 exit /b 0
 
 :ensure_source
 call :find_source
 if defined SRC exit /b 0
-call :fetch_source
+set "TARGET=%HERE%"
+call :fetch
 if errorlevel 1 exit /b 1
-set "SRC=%HERE%\XSEmu"
-if not exist "%SRC%\Cargo.toml" (
-  echo [XSEmu] ERROR: the download left "%SRC%" without a Cargo.toml.
+if not exist "%TARGET%\crates\xcl\Cargo.toml" (
+  echo [XSEmu] ERROR: the download left "%TARGET%" without the xcl crate.
   exit /b 1
 )
+set "SRC=%TARGET%"
 exit /b 0
 
-:fetch_source
-echo [XSEmu] No XSEmu checkout here yet, so fetching one into "%HERE%\XSEmu".
-echo          This is a one-time download and cargo build; expect a few minutes.
+:fetch
+if exist "%TARGET%\Cargo.toml" (
+  echo [XSEmu] ERROR: "%TARGET%" already holds another Rust project, and fetching
+  echo          XSEmu here would overwrite it. Use an empty folder instead.
+  exit /b 1
+)
+set "OTHER_REMOTE="
+if exist "%TARGET%\.git" for /f "delims=" %%U in ('git -C "%TARGET%" remote get-url origin 2^>nul') do set "OTHER_REMOTE=%%U"
+if defined OTHER_REMOTE if /i not "%OTHER_REMOTE%"=="%REPO_URL%" (
+  echo [XSEmu] ERROR: "%TARGET%" already belongs to another git repository:
+  echo            %OTHER_REMOTE%
+  echo          Use an empty folder instead, so nothing of yours is overwritten.
+  exit /b 1
+)
+echo [XSEmu] No XSEmu sources here yet, so fetching them into "%TARGET%".
+echo          One download and one build; expect a few minutes.
 where git >nul 2>nul
 if errorlevel 1 goto fetch_archive
-git clone --depth 1 "%REPO_URL%" "%HERE%\XSEmu"
-if not errorlevel 1 (
-  echo [XSEmu] Cloned "%HERE%\XSEmu". Later runs reuse it; "XSEmu.bat update" pulls.
-  exit /b 0
-)
-echo [XSEmu] git clone failed, falling back to a source archive.
-if exist "%HERE%\XSEmu" rmdir /s /q "%HERE%\XSEmu"
+git -C "%TARGET%" init --quiet
+if errorlevel 1 goto fetch_archive
+git -C "%TARGET%" remote remove origin >nul 2>nul
+git -C "%TARGET%" remote add origin "%REPO_URL%"
+git -C "%TARGET%" fetch --quiet --depth 1 origin +refs/heads/main:refs/remotes/origin/main
+if errorlevel 1 goto fetch_git_failed
+git -C "%TARGET%" checkout --quiet --force -B main origin/main
+if errorlevel 1 goto fetch_git_failed
+echo [XSEmu] Fetched "%REPO_URL%" into "%TARGET%".
+echo          Later runs reuse it; "XSEmu.bat update" pulls the newest sources.
+exit /b 0
+
+:fetch_git_failed
+echo [XSEmu] git could not fetch XSEmu, so trying a source archive instead.
+if exist "%TARGET%\.git" rmdir /s /q "%TARGET%\.git"
 
 :fetch_archive
 set "ZIP=%TEMP%\xsemu-main.zip"
@@ -187,24 +212,28 @@ if errorlevel 1 goto fetch_failed
 :fetch_unpack
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -LiteralPath '%ZIP%' -DestinationPath '%UNPACK%' -Force"
 if errorlevel 1 goto fetch_failed
-if exist "%HERE%\XSEmu" rmdir /s /q "%HERE%\XSEmu"
-move "%UNPACK%\XSEmu-main" "%HERE%\XSEmu" >nul
-if errorlevel 1 goto fetch_failed
+robocopy "%UNPACK%\XSEmu-main" "%TARGET%" /E /NFL /NDL /NJH /NJS /NP >nul
+if errorlevel 8 goto fetch_failed
 del /q "%ZIP%" 2>nul
 rmdir /s /q "%UNPACK%" 2>nul
-echo [XSEmu] Downloaded "%HERE%\XSEmu".
+echo [XSEmu] Unpacked the sources into "%TARGET%".
 echo          That copy has no git history, so "XSEmu.bat update" downloads a
 echo          fresh archive instead of pulling.
 exit /b 0
 
 :fetch_failed
 echo [XSEmu] ERROR: could not download XSEmu.
-echo          Check the network, or clone it yourself into "%HERE%\XSEmu":
-echo            git clone %REPO_URL% "%HERE%\XSEmu"
+echo          Check the network, or fetch the sources yourself with:
+echo            git clone %REPO_URL% "%TARGET%"
 exit /b 1
 
 :update_source
-if not exist "%SRC%\.git" goto update_archive
+if exist "%SRC%\.git" goto update_git
+echo [XSEmu] "%SRC%" came from a source archive, so downloading a fresh copy.
+set "TARGET=%SRC%"
+goto fetch_archive
+
+:update_git
 where git >nul 2>nul
 if errorlevel 1 (
   echo [XSEmu] ERROR: git is not on PATH, so this checkout cannot be updated.
@@ -219,15 +248,6 @@ if errorlevel 1 (
   exit /b 1
 )
 exit /b 0
-
-:update_archive
-if /i not "%SRC%"=="%HERE%\XSEmu" (
-  echo [XSEmu] "%SRC%" has no git history and is not the folder this script
-  echo          fetches into, so there is nothing here to update.
-  exit /b 0
-)
-echo [XSEmu] "%SRC%" came from a source archive, so downloading a fresh copy.
-goto fetch_archive
 
 :ensure_exe
 if exist "%EXE%" exit /b 0
@@ -323,7 +343,7 @@ exit /b 0
 :check_dxc
 rem Shaders are translated to HLSL and compiled with DXC. Warn once if it looks
 rem unfindable; it is only fatal to shader work, not to starting XSEmu.
-if exist "%EXE%" if exist "%SRC%\target\release\dxcompiler.dll" exit /b 0
+if exist "%SRC%\target\release\dxcompiler.dll" exit /b 0
 if exist "%SRC%\dxcompiler.dll" exit /b 0
 if defined XCL_DXC_DIR exit /b 0
 if exist "%ProgramFiles(x86)%\Windows Kits\10\bin\*\x64\dxcompiler.dll" exit /b 0
