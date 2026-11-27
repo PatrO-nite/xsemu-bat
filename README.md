@@ -24,10 +24,10 @@ clones nothing. Without git on `PATH`, the first run downloads the source archiv
 | `XSEmu.bat` | Fetches, builds if needed, then opens XSEmu's own menu, which asks for a game folder, a title `.exe` or a `MicrosoftGame.config`. |
 | `XSEmu.bat <folder \| game.exe>` | Runs that title. Later arguments are passed to the title after `--`. |
 | `XSEmu.bat run <folder \| exe>` | The same, spelled out. |
-| `XSEmu.bat warm-up --full` | Any other XSEmu CLI command goes straight through: `run`, `inspect`, `disasm`, `shaders`, `rpf`, `warm-up`, `help`, `--help`, `--version`. |
+| `XSEmu.bat warm-up --full` | Any other XSEmu CLI command goes straight through: `run`, `inspect`, `disasm`, `shaders`, `rpf`, `warm-up`, `help`, `--help`, `-h`, `--version`. |
 | `XSEmu.bat build` | Builds `target\release\XSEmu.exe` even if it already exists. |
 | `XSEmu.bat launcher` | Builds the Qt launcher (CMake + Qt 6) and starts it. |
-| `XSEmu.bat update` | Pulls the newest XSEmu sources and rebuilds. |
+| `XSEmu.bat update` | Pulls the newest XSEmu sources and rebuilds; on a copy that came from a source archive it downloads a fresh one. |
 
 Dragging a game folder or a title `.exe` onto `XSEmu.bat` in Explorer also works.
 
@@ -47,8 +47,9 @@ XSEmu.bat launcher
 - **Rust** MSVC toolchain (`stable-x86_64-pc-windows-msvc`) and the **Visual Studio C++ build
   tools** for the runtime.
 - **DXC** 1.8 or newer (`dxcompiler.dll`, `dxil.dll`) for shader translation. XSEmu looks in the
-  Windows SDK, next to `XSEmu.exe`, and in `XCL_DXC_DIR`; the script warns when it finds none.
-  Without DXC, `XCL_SHADER_BACKEND=dxil` uses the built-in backend instead.
+  Windows SDK, next to `XSEmu.exe`, and in `XCL_DXC_DIR`. The script warns when it finds none, for
+  the commands that compile shaders (`run`, `warm-up`, `shaders`) and not for `--version`,
+  `--help` or `inspect`. Without DXC, `XCL_SHADER_BACKEND=dxil` uses the built-in backend instead.
 - For `launcher` only: **CMake** 3.21 or later, **Visual Studio 2022**, and **Qt 6.4+** built for
   MSVC 2022 x64. The script finds Qt through `CMAKE_PREFIX_PATH` or by scanning
   `C:\Qt\<version>\msvc2022_64`.
