@@ -43,3 +43,14 @@ Windows SDK is reported but not installed: without it, set `XCL_SHADER_BACKEND=d
 
 The folder becomes the checkout, so the script refuses one that already holds another Rust project
 or another git repository, and a drive root.
+
+## Legal
+
+This repository holds a batch script and nothing else. It ships no game files, console firmware, SDK
+headers or binaries, keys, or dumps, and it neither decrypts packages nor bypasses DRM. It does not
+condone piracy: XSEmu runs a title's own code on Windows, so use it only with titles you own and have
+unpacked yourself, and only where that is lawful where you live.
+
+XSEmu is GPL-2.0-only and belongs to its authors; XSEmu.bat is only a wrapper around its build and
+`XSEmu run`. XSEmu is not affiliated with or endorsed by Microsoft or AMD, and Xbox is a trademark of
+Microsoft.
