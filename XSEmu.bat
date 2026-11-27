@@ -2,20 +2,21 @@
 rem ---------------------------------------------------------------------------
 rem XSEmu.bat - fetch XSEmu, install what it needs, build it, then run it.
 rem
-rem   XSEmu.bat                        fetch, check requirements, build, open the launcher
+rem   XSEmu.bat                        fetch, check requirements, build everything
 rem   XSEmu.bat <folder | game.exe>    run that title; later args go to the title
 rem   XSEmu.bat run|inspect|disasm|shaders|rpf|warm-up|help|--help|--version ...
 rem                                    passed straight to XSEmu.exe
 rem   XSEmu.bat build                  build target\release\XSEmu.exe
-rem   XSEmu.bat launcher               build the Qt launcher and open it
+rem   XSEmu.bat launcher               build the Qt launcher and show its path
 rem   XSEmu.bat update                 pull the newest sources, rebuild both
 rem
 rem Put this file in a folder of its own and run it. The first run turns that
 rem folder into an XSEmu checkout: it fetches the sources here, so Cargo.toml and
 rem crates\ land next to this script. Missing build tools are offered for install
 rem through winget and aqtinstall, then the runtime is built with cargo and the
-rem Qt launcher with CMake. You can also drop a game folder or a title .exe onto
-rem the script.
+rem Qt launcher with CMake. Nothing is started at the end: the script prints where
+rem the launcher is, and you open it yourself. You can also drop a game folder or
+rem a title .exe onto the script to run that title directly.
 rem
 rem XSEMU_INSTALL=no  never offer to install anything, just report what is missing
 rem XSEMU_INSTALL=yes accept every install offer without asking
@@ -114,9 +115,7 @@ call :ensure_exe
 if errorlevel 1 goto failed
 call :ensure_launcher
 if errorlevel 1 goto console_menu
-echo [XSEmu] Starting the launcher.
-"%SRC%\target\launcher-dist\bin\XSEmuLauncher.exe"
-set "EXITCODE=%ERRORLEVEL%"
+call :where_launcher
 goto done
 
 :console_menu
@@ -135,10 +134,14 @@ goto done
 :launcher_target
 call :ensure_launcher_forced
 if errorlevel 1 goto failed
-echo [XSEmu] Starting the launcher.
-"%SRC%\target\launcher-dist\bin\XSEmuLauncher.exe"
-set "EXITCODE=%ERRORLEVEL%"
+call :where_launcher
 goto done
+
+:where_launcher
+echo.
+echo [XSEmu] The launcher is ready. Open it from Explorer or run:
+echo          "%SRC%\target\launcher-dist\bin\XSEmuLauncher.exe"
+exit /b 0
 
 :update_target
 call :find_source

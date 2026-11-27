@@ -1,21 +1,31 @@
 # XSEmu.bat
 
 Batch launcher for [zortos293/XSEmu](https://github.com/zortos293/XSEmu), the experimental Xbox
-Series X|S (GDK) title runner. It fetches and builds XSEmu, installs missing build tools, and opens
-the launcher. It contains no XSEmu code: XSEmu is GPL-2.0-only and belongs to its authors.
+Series X|S (GDK) title runner. It fetches and builds XSEmu, installs missing build tools, and tells
+you where the launcher is. It contains no XSEmu code: XSEmu is GPL-2.0-only and belongs to its
+authors.
 
 ## Use
 
 Put `XSEmu.bat` in an empty folder and run it. The first run fetches XSEmu into that folder, offers
-to install whatever the build needs, builds everything, and opens the launcher. Later runs go
-straight to it.
+to install whatever the build needs, and builds everything. It starts nothing: when it finishes, it
+prints the path of the launcher and you open it yourself.
+
+**The launcher is always this file**, in the folder you put the script in:
+
+```
+XSEmu\target\launcher-dist\bin\XSEmuLauncher.exe
+```
+
+Run that (or make a shortcut to it) whenever you want to play. You only run `XSEmu.bat` again when
+you want to update or rebuild.
 
 | Command | What it does |
 |---|---|
-| `XSEmu.bat` | Build what is missing, open the launcher. |
+| `XSEmu.bat` | Fetch, install what is missing, build everything, print the launcher path. |
 | `XSEmu.bat <folder \| game.exe> [args]` | Run a title directly; `args` reach the title after `--`. |
 | `XSEmu.bat build` | Rebuild `target\release\XSEmu.exe`. |
-| `XSEmu.bat launcher` | Rebuild the launcher and open it. |
+| `XSEmu.bat launcher` | Rebuild the launcher and print its path. |
 | `XSEmu.bat update` | Pull the newest sources and rebuild. |
 | `XSEmu.bat inspect\|shaders\|rpf\|warm-up\|--version ...` | Passed to `XSEmu.exe`. |
 
