@@ -3,7 +3,7 @@
 Batch launcher for [zortos293/XSEmu](https://github.com/zortos293/XSEmu), the experimental Xbox
 Series X|S (GDK) title runner. It fetches and builds XSEmu, installs missing build tools, and tells
 you where the launcher is. It contains no XSEmu code: XSEmu is GPL-2.0-only and belongs to its
-authors.
+authors. The script itself is MIT licensed, so use it, fork it, and change it freely.
 
 ## Use
 
@@ -62,5 +62,5 @@ condone piracy: XSEmu runs a title's own code on Windows, so use it only with ti
 unpacked yourself, and only where that is lawful where you live.
 
 XSEmu is GPL-2.0-only and belongs to its authors; XSEmu.bat is only a wrapper around its build and
-`XSEmu run`. XSEmu is not affiliated with or endorsed by Microsoft or AMD, and Xbox is a trademark of
-Microsoft.
+`XSEmu run`, and is itself published under the [MIT licence](LICENSE). XSEmu is not affiliated with
+or endorsed by Microsoft or AMD, and Xbox is a trademark of Microsoft.
