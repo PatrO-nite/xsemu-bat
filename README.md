@@ -36,13 +36,13 @@ open at the end; from a console it returns the exit code.
 
 - Windows 10/11, x64.
 - A D3D12 GPU with Shader Model 6.6 and mesh shaders.
-- git — the fetch falls back to a source archive without it.
+- git - the fetch falls back to a source archive without it.
 - The Rust MSVC toolchain.
 - The Visual Studio C++ build tools.
 - CMake.
-- Python — only to download Qt.
-- Qt 6.8 for MSVC 2022 — about 1.1 GB, into `%LOCALAPPDATA%\Qt`.
-- DXC 1.8+ from the Windows SDK — not installed for you; without it, set `XCL_SHADER_BACKEND=dxil`.
+- Python - only to download Qt.
+- Qt 6.8 for MSVC 2022 - about 1.1 GB, into `%LOCALAPPDATA%\Qt`.
+- DXC 1.8+ from the Windows SDK - not installed for you; without it, set `XCL_SHADER_BACKEND=dxil`.
 
 Everything except Windows, the GPU and DXC is installed for you when you say yes: git, Rust, the C++
 build tools, CMake and Python through winget, Qt through aqtinstall.
